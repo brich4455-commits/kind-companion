@@ -5,8 +5,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 // Clock face geometry (SVG viewBox units)
 const SIZE = 200;
 const CENTER = SIZE / 2;
@@ -16,6 +14,47 @@ const HAND_LENGTHS = { hour: 44, minute: 66, second: 76 };
 function polar(angleDeg: number, length: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: CENTER + length * Math.cos(rad), y: CENTER + length * Math.sin(rad) };
+}
+
+function Hand({
+  angle,
+  length,
+  stroke,
+  width,
+  tail = 0,
+}: {
+  angle: number;
+  length: number;
+  stroke: string;
+  width: number;
+  tail?: number;
+}) {
+  const tip = polar(angle, length);
+  const tailEnd = polar(angle + 180, tail);
+  return (
+    <g>
+      {tail > 0 && (
+        <line
+          x1={CENTER}
+          y1={CENTER}
+          x2={tailEnd.x}
+          y2={tailEnd.y}
+          stroke={stroke}
+          strokeWidth={width}
+          strokeLinecap="round"
+        />
+      )}
+      <line
+        x1={CENTER}
+        y1={CENTER}
+        x2={tip.x}
+        y2={tip.y}
+        stroke={stroke}
+        strokeWidth={width}
+        strokeLinecap="round"
+      />
+    </g>
+  );
 }
 
 function Index() {
@@ -41,14 +80,21 @@ function Index() {
   });
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden bg-[#fcfbf8]">
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-[#fcfbf8]">
       {/* Soft ambient glows */}
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-orange-100 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-sky-100 blur-3xl" />
 
       {/* Analog clock */}
       <div className="relative rounded-full border border-stone-200 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)]">
-        <svg width="320" height="320" viewBox={`0 0 ${SIZE} ${SIZE}`} className="drop-shadow-sm">
+        <svg
+          width="340"
+          height="340"
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          className="drop-shadow-sm"
+          role="img"
+          aria-label={`Analog clock showing ${minutes} minutes past ${now.getHours() % 12 === 0 ? 12 : now.getHours() % 12}`}
+        >
           {/* Face ring */}
           <circle cx={CENTER} cy={CENTER} r={RADIUS + 6} fill="#ffffff" stroke="#e7e5e4" strokeWidth="2" />
           <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="#fafaf9" />
@@ -93,14 +139,12 @@ function Index() {
             );
           })}
 
-          {/* Center accent dot (drawn first, covered by pins) */}
+          {/* Brand-style accent dot near center (covered by the pin) */}
           <circle cx={CENTER} cy={CENTER} r={7} fill="#ea580c" />
 
-          {/* Hour hand */}
+          {/* Hands */}
           <Hand angle={hrAngle} length={HAND_LENGTHS.hour} stroke="#292524" width={6.5} />
-          {/* Minute hand */}
           <Hand angle={minAngle} length={HAND_LENGTHS.minute} stroke="#57534e" width={4.5} />
-          {/* Second hand */}
           <Hand angle={secAngle} length={HAND_LENGTHS.second} stroke="#ea580c" width={2.5} tail={18} />
 
           {/* Center pin */}
@@ -108,41 +152,10 @@ function Index() {
         </svg>
       </div>
 
-      {/* Digital time */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="font-mono text-6xl font-light tabular-nums tracking-tight text-stone-800 sm:text-7xl">
-          {pad(now.getHours())}:{pad(minutes)}
-          <span className="ml-1 align-top text-3xl text-orange-600">{pad(seconds)}</span>
-        </div>
-        <div className="rounded-full border border-stone-200 bg-white/80 px-5 py-2 text-sm font-medium tracking-wide text-stone-600 shadow-sm">
-          {dateLabel}
-        </div>
+      {/* Date caption */}
+      <div className="rounded-full border border-stone-200 bg-white/80 px-5 py-2 text-sm font-medium tracking-wide text-stone-600 shadow-sm">
+        {dateLabel}
       </div>
     </div>
-  );
-}
-
-function Hand({
-  angle,
-  length,
-  stroke,
-  width,
-  tail = 0,
-}: {
-  angle: number;
-  length: number;
-  stroke: string;
-  width: number;
-  tail?: number;
-}) {
-  const tip = polar(angle, length);
-  const tailEnd = polar(angle + 180, tail);
-  return (
-    <g>
-      {tail > 0 && (
-        <line x1={CENTER} y1={CENTER} x2={tailEnd.x} y2={tailEnd.y} stroke={stroke} strokeWidth={width} strokeLinecap="round" />
-      )}
-      <line x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y} stroke={stroke} strokeWidth={width} strokeLinecap="round" />
-    </g>
   );
 }
